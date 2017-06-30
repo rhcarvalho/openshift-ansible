@@ -110,7 +110,7 @@ class PreciseVersionNotFound(AosVersionException):
         msg = ['Not all of the required packages are available at their requested version']
         msg += ['{}:{} '.format(pkg["name"], pkg["version"]) for pkg in not_found]
         msg += ['Please check your subscriptions and enabled repositories.']
-        AosVersionException.__init__(self, '\n'.join(msg), not_found)
+        super(PreciseVersionNotFound, self).__init__('\n'.join(msg), not_found)
 
 
 def _check_precise_version_found(pkgs, expected_pkgs_dict):
@@ -149,7 +149,7 @@ class FoundHigherVersion(AosVersionException):
         msg += ['  ' + name for name in higher_found]
         msg += ['This will prevent installing the version you requested.']
         msg += ['Please check your enabled repositories or adjust openshift_release.']
-        AosVersionException.__init__(self, '\n'.join(msg), higher_found)
+        super(FoundHigherVersion, self).__init__('\n'.join(msg), higher_found)
 
 
 def _check_higher_version_found(pkgs, expected_pkgs_dict):
@@ -186,7 +186,7 @@ class FoundMultiRelease(AosVersionException):
         msg = ['Multiple minor versions of these packages are available']
         msg += ['  ' + name for name in multi_found]
         msg += ["There should only be one OpenShift release repository enabled at a time."]
-        AosVersionException.__init__(self, '\n'.join(msg), multi_found)
+        super(FoundMultiRelease, self).__init__('\n'.join(msg), multi_found)
 
 
 def _check_multi_minor_release(pkgs, expected_pkgs_dict):
