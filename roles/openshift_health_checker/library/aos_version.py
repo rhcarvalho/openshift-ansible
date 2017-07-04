@@ -63,22 +63,22 @@ def main():
 
     # get the list of packages available and complain if anything is wrong
     try:
-        pkgs = _retrieve_available_packages(expected_pkg_names)
+        pkgs = retrieve_available_packages(expected_pkg_names)
         if versioned_pkgs:
-            _check_precise_version_found(pkgs, _to_dict(versioned_pkgs))
-            _check_higher_version_found(pkgs, _to_dict(versioned_pkgs))
+            check_precise_version_found(pkgs, to_dict(versioned_pkgs))
+            check_higher_version_found(pkgs, to_dict(versioned_pkgs))
         if multi_minor_pkgs:
-            _check_multi_minor_release(pkgs, _to_dict(multi_minor_pkgs))
+            check_multi_minor_release(pkgs, to_dict(multi_minor_pkgs))
     except AosVersionException as excinfo:
         module.fail_json(msg=str(excinfo))
     module.exit_json(changed=False)
 
 
-def _to_dict(pkg_list):
+def to_dict(pkg_list):
     return {pkg["name"]: pkg for pkg in pkg_list}
 
 
-def _retrieve_available_packages(expected_pkgs):
+def retrieve_available_packages(expected_pkgs):
     # search for package versions available for openshift pkgs
     yb = yum.YumBase()  # pylint: disable=invalid-name
 
@@ -113,7 +113,7 @@ class PreciseVersionNotFound(AosVersionException):
         super(PreciseVersionNotFound, self).__init__('\n'.join(msg), not_found)
 
 
-def _check_precise_version_found(pkgs, expected_pkgs_dict):
+def check_precise_version_found(pkgs, expected_pkgs_dict):
     # see if any packages couldn't be found at requested release version
     # we would like to verify that the latest available pkgs have however specific a version is given.
     # so e.g. if there is a package version 3.4.1.5 the check passes; if only 3.4.0, it fails.
@@ -152,7 +152,7 @@ class FoundHigherVersion(AosVersionException):
         super(FoundHigherVersion, self).__init__('\n'.join(msg), higher_found)
 
 
-def _check_higher_version_found(pkgs, expected_pkgs_dict):
+def check_higher_version_found(pkgs, expected_pkgs_dict):
     expected_pkg_names = list(expected_pkgs_dict)
 
     # see if any packages are available in a version higher than requested
@@ -189,7 +189,7 @@ class FoundMultiRelease(AosVersionException):
         super(FoundMultiRelease, self).__init__('\n'.join(msg), multi_found)
 
 
-def _check_multi_minor_release(pkgs, expected_pkgs_dict):
+def check_multi_minor_release(pkgs, expected_pkgs_dict):
     # see if any packages are available in more than one minor version
     pkgs_by_name_version = {}
     for pkg in pkgs:
