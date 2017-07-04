@@ -27,13 +27,6 @@ except ImportError as err:
     IMPORT_EXCEPTION = err
 
 
-class AosVersionException(Exception):
-    '''Base exception class for package version problems'''
-    def __init__(self, message, problem_pkgs=None):
-        Exception.__init__(self, message)
-        self.problem_pkgs = problem_pkgs
-
-
 def main():
     """Entrypoint for this Ansible module"""
     module = AnsibleModule(
@@ -74,8 +67,11 @@ def main():
     module.exit_json(changed=False)
 
 
-def to_dict(pkg_list):
-    return {pkg["name"]: pkg for pkg in pkg_list}
+class AosVersionException(Exception):
+    '''Base exception class for package version problems'''
+    def __init__(self, message, problem_pkgs=None):
+        Exception.__init__(self, message)
+        self.problem_pkgs = problem_pkgs
 
 
 def retrieve_available_packages(expected_pkgs):
@@ -102,15 +98,6 @@ def retrieve_available_packages(expected_pkgs):
             str(excinfo),
         ]))
     return pkgs
-
-
-class PreciseVersionNotFound(AosVersionException):
-    """Exception for reporting packages not available at given version"""
-    def __init__(self, not_found):
-        msg = ['Not all of the required packages are available at their requested version']
-        msg += ['{}:{} '.format(pkg["name"], pkg["version"]) for pkg in not_found]
-        msg += ['Please check your subscriptions and enabled repositories.']
-        super(PreciseVersionNotFound, self).__init__('\n'.join(msg), not_found)
 
 
 def check_precise_version_found(pkgs, expected_pkgs_dict):
@@ -141,15 +128,13 @@ def check_precise_version_found(pkgs, expected_pkgs_dict):
         raise PreciseVersionNotFound(not_found)
 
 
-class FoundHigherVersion(AosVersionException):
-    """Exception for reporting that a higher version than requested is available"""
-    def __init__(self, higher_found):
-        msg = ['Some required package(s) are available at a version',
-               'that is higher than requested']
-        msg += ['  ' + name for name in higher_found]
-        msg += ['This will prevent installing the version you requested.']
-        msg += ['Please check your enabled repositories or adjust openshift_release.']
-        super(FoundHigherVersion, self).__init__('\n'.join(msg), higher_found)
+class PreciseVersionNotFound(AosVersionException):
+    """Exception for reporting packages not available at given version"""
+    def __init__(self, not_found):
+        msg = ['Not all of the required packages are available at their requested version']
+        msg += ['{}:{} '.format(pkg["name"], pkg["version"]) for pkg in not_found]
+        msg += ['Please check your subscriptions and enabled repositories.']
+        super(PreciseVersionNotFound, self).__init__('\n'.join(msg), not_found)
 
 
 def check_higher_version_found(pkgs, expected_pkgs_dict):
@@ -180,13 +165,15 @@ def check_higher_version_found(pkgs, expected_pkgs_dict):
         raise FoundHigherVersion(higher_found)
 
 
-class FoundMultiRelease(AosVersionException):
-    """Exception for reporting multiple minor releases found for same package"""
-    def __init__(self, multi_found):
-        msg = ['Multiple minor versions of these packages are available']
-        msg += ['  ' + name for name in multi_found]
-        msg += ["There should only be one OpenShift release repository enabled at a time."]
-        super(FoundMultiRelease, self).__init__('\n'.join(msg), multi_found)
+class FoundHigherVersion(AosVersionException):
+    """Exception for reporting that a higher version than requested is available"""
+    def __init__(self, higher_found):
+        msg = ['Some required package(s) are available at a version',
+        'that is higher than requested']
+        msg += ['  ' + name for name in higher_found]
+        msg += ['This will prevent installing the version you requested.']
+        msg += ['Please check your enabled repositories or adjust openshift_release.']
+        super(FoundHigherVersion, self).__init__('\n'.join(msg), higher_found)
 
 
 def check_multi_minor_release(pkgs, expected_pkgs_dict):
@@ -206,6 +193,19 @@ def check_multi_minor_release(pkgs, expected_pkgs_dict):
 
     if multi_found:
         raise FoundMultiRelease(multi_found)
+
+
+class FoundMultiRelease(AosVersionException):
+    """Exception for reporting multiple minor releases found for same package"""
+    def __init__(self, multi_found):
+        msg = ['Multiple minor versions of these packages are available']
+        msg += ['  ' + name for name in multi_found]
+        msg += ["There should only be one OpenShift release repository enabled at a time."]
+        super(FoundMultiRelease, self).__init__('\n'.join(msg), multi_found)
+
+
+def to_dict(pkg_list):
+    return {pkg["name"]: pkg for pkg in pkg_list}
 
 
 if __name__ == '__main__':
