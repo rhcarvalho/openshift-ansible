@@ -14,7 +14,7 @@ import yum  # pylint: disable=import-error
 from ansible.module_utils.basic import AnsibleModule
 
 
-def main():  # pylint: disable=missing-docstring,too-many-branches
+def main():
     module = AnsibleModule(
         argument_spec=dict(
             packages=dict(type='list', default=[])

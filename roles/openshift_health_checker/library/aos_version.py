@@ -28,7 +28,6 @@ except ImportError as err:
 
 
 def main():
-    """Entrypoint for this Ansible module"""
     module = AnsibleModule(
         argument_spec=dict(
             package_list=dict(type="list", required=True),

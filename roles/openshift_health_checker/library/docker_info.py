@@ -1,4 +1,3 @@
-# pylint: disable=missing-docstring
 """
 Ansible module for determining information about the docker host.
 

@@ -57,7 +57,7 @@ def check_etcd_key_size(client, key, size_limit, total_size=0, depth=0, depth_li
     return size, max_limit_exceeded
 
 
-def main():  # pylint: disable=missing-docstring,too-many-branches
+def main():
     module = AnsibleModule(
         argument_spec=dict(
             size_limit_bytes=dict(type="int", default=0),
