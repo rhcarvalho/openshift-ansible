@@ -1,6 +1,10 @@
-'''
-Ansible callback plugin.
-'''
+"""Ansible callback plugin.
+
+This callback plugin stores task results and summarizes failures.
+
+The file name is prefixed with `zz_` to make this plugin be loaded last by
+Ansible, thus making its output the last thing that users see.
+"""
 
 # Reason: In several locations below we disable pylint protected-access
 #         for Ansible objects that do not give us any public way
@@ -16,11 +20,7 @@ from ansible.utils.color import stringc
 
 
 class CallbackModule(CallbackBase):
-    '''
-    This callback plugin stores task results and summarizes failures.
-    The file name is prefixed with `zz_` to make this plugin be loaded last by
-    Ansible, thus making its output the last thing that users see.
-    '''
+    """Ansible callback plugin to summarize playbook run failures."""
 
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'aggregate'
@@ -48,7 +48,7 @@ class CallbackModule(CallbackBase):
             self._print_failure_details(self.__failures)
 
     def _print_failure_details(self, failures):
-        '''Print a summary of failed tasks or checks.'''
+        """Print a summary of failed tasks or checks."""
         self._display.display(u'\nFailure summary:\n')
 
         width = len(str(len(failures)))
@@ -112,15 +112,15 @@ class CallbackModule(CallbackBase):
 
 # re: result attrs see top comment  # pylint: disable=protected-access
 def _format_failure(failure):
-    '''Return a list of pretty-formatted text entries describing a failure, including
-    relevant information about it. Expect that the list of text entries will be joined
-    by a newline separator when output to the user.'''
+    """Return a list of pretty-formatted text entries describing a failure,
+    including relevant information about it. Expect that the list of text
+    entries will be joined by a newline separator when output to the user."""
     host = failure._host.get_name()
     play = _get_play(failure._task)
     if play:
         play = play.get_name()
     task = failure._task.get_name()
-    msg = failure._result.get('msg', u'???')
+    msg = failure._result.get('msg', u'No message.')
     fields = (
         (u'Host', host),
         (u'Play', play),
@@ -134,7 +134,7 @@ def _format_failure(failure):
 
 
 def _format_failed_checks(checks):
-    '''Return pretty-formatted text describing checks that failed.'''
+    """Return pretty-formatted text describing checks that failed."""
     failed_check_msgs = []
     for check, body in checks.items():
         if body.get('failed', False):   # only show the failed checks
@@ -149,8 +149,9 @@ def _format_failed_checks(checks):
 # This is inspired by ansible.playbook.base.Base.dump_me.
 # re: play/task/block attrs see top comment  # pylint: disable=protected-access
 def _get_play(obj):
-    '''Given a task or block, recursively tries to find its parent play.'''
+    """Given a task or block, recursively tries to find its parent play."""
     if hasattr(obj, '_play'):
         return obj._play
     if getattr(obj, '_parent'):
         return _get_play(obj._parent)
+    return None
