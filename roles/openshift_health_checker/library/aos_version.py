@@ -1,22 +1,7 @@
 #!/usr/bin/python
-'''
-Ansible module for yum-based systems determining if multiple releases
-of an OpenShift package are available, and if the release requested
-(if any) is available down to the given precision.
-
-For Enterprise, multiple releases available suggest that multiple repos
-are enabled for the different releases, which may cause installation
-problems. With Origin, however, this is a normal state of affairs as
-all the releases are provided in a single repo with the expectation that
-only the latest can be installed.
-
-Code in the openshift_version role contains a lot of logic to pin down
-the exact package and image version to use and so does some validation
-of release availability already. Without duplicating all that, we would
-like the user to have a helpful error message if we detect things will
-not work out right. Note that if openshift_release is not specified in
-the inventory, the version comparison checks just pass.
-'''
+"""Ansible module for yum-based systems to determine if RPM packages are
+available at a given version.
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -92,8 +77,8 @@ def retrieve_available_packages(expected_pkgs):
     except yum.Errors.PackageSackError as excinfo:
         # you only hit this if *none* of the packages are available
         raise AosVersionException('\n'.join([
-            'Unable to find any OpenShift packages.',
-            'Check your subscription and repo settings.',
+            'Unable to find any of these packages: {}.'.format(', '.join(sorted(expected_pkgs))),
+            'Please check your subscriptions and RPM repository settings.',
             str(excinfo),
         ]))
     return pkgs
@@ -106,14 +91,14 @@ def check_precise_version_found(pkgs, expected_pkgs_dict):
 
     pkgs_precise_version_found = set()
     for pkg in pkgs:
-        if pkg.name not in expected_pkgs_dict:
+        if pkg.name not in expected_pkgs_dict:     # REVIEW: what would be an example of this being true?
             continue
         expected_pkg_versions = expected_pkgs_dict[pkg.name]["version"]
         if isinstance(expected_pkg_versions, basestring):
             expected_pkg_versions = [expected_pkg_versions]
         for expected_pkg_version in expected_pkg_versions:
             # does the version match, to the precision requested?
-            # and, is it strictly greater, at the precision requested?
+            # and, is it strictly greater, at the precision requested?       # REVIEW: where is the 'strictly greater' part?
             match_version = '.'.join(pkg.version.split('.')[:expected_pkg_version.count('.') + 1])
             if match_version == expected_pkg_version:
                 pkgs_precise_version_found.add(pkg.name)
@@ -150,6 +135,10 @@ def check_higher_version_found(pkgs, expected_pkgs_dict):
         # NOTE: the list of versions is assumed to be sorted so that the highest
         # desirable version is the last.
         highest_desirable_version = expected_pkg_versions[-1]
+        # FIXME: version "segments" could contain non-numeric values (e.g.
+        # "alpha"), note however that this is coming from the module input,
+        # which is what we specify in checks -- not arbitrary values coming,
+        # e.g., from yum.
         req_release_arr = [int(segment) for segment in highest_desirable_version.split(".")]
         version = [int(segment) for segment in pkg.version.split(".")]
         too_high = version[:len(req_release_arr)] > req_release_arr
