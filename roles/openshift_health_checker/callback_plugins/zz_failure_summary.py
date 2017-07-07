@@ -40,7 +40,7 @@ class CallbackModule(CallbackBase):
     def v2_runner_on_failed(self, result, ignore_errors=False):
         super(CallbackModule, self).v2_runner_on_failed(result, ignore_errors)
         if not ignore_errors:
-            self.__failures.append(dict(result=result, ignore_errors=ignore_errors))
+            self.__failures.append(result)
 
     def v2_playbook_on_stats(self, stats):
         super(CallbackModule, self).v2_playbook_on_stats(stats)
@@ -70,10 +70,10 @@ class CallbackModule(CallbackBase):
         # re: result attrs see top comment  # pylint: disable=protected-access
         for failure in failures:
             # get context from check task result since callback plugins cannot access task vars
-            playbook_context = playbook_context or failure['result']._result.get('playbook_context')
+            playbook_context = playbook_context or failure._result.get('playbook_context')
             failed_checks.update(
                 name
-                for name, result in failure['result']._result.get('checks', {}).items()
+                for name, result in failure._result.get('checks', {}).items()
                 if result.get('failed')
             )
         if failed_checks:
@@ -115,21 +115,20 @@ def _format_failure(failure):
     '''Return a list of pretty-formatted text entries describing a failure, including
     relevant information about it. Expect that the list of text entries will be joined
     by a newline separator when output to the user.'''
-    result = failure['result']
-    host = result._host.get_name()
-    play = _get_play(result._task)
+    host = failure._host.get_name()
+    play = _get_play(failure._task)
     if play:
         play = play.get_name()
-    task = result._task.get_name()
-    msg = result._result.get('msg', u'???')
+    task = failure._task.get_name()
+    msg = failure._result.get('msg', u'???')
     fields = (
         (u'Host', host),
         (u'Play', play),
         (u'Task', task),
         (u'Message', stringc(msg, C.COLOR_ERROR)),
     )
-    if 'checks' in result._result:
-        fields += ((u'Details', _format_failed_checks(result._result['checks'])),)
+    if 'checks' in failure._result:
+        fields += ((u'Details', _format_failed_checks(failure._result['checks'])),)
     row_format = '{:10}{}'
     return [row_format.format(header + u':', body) for header, body in fields]
 
