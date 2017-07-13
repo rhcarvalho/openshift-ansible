@@ -122,12 +122,15 @@ def _check_precise_version_found(pkgs, expected_pkgs_dict):
     for pkg in pkgs:
         if pkg.name not in expected_pkgs_dict:
             continue
-        # does the version match, to the precision requested?
-        # and, is it strictly greater, at the precision requested?
-        expected_pkg_version = expected_pkgs_dict[pkg.name]["version"]
-        match_version = '.'.join(pkg.version.split('.')[:expected_pkg_version.count('.') + 1])
-        if match_version == expected_pkg_version:
-            pkgs_precise_version_found.add(pkg.name)
+        expected_pkg_versions = expected_pkgs_dict[pkg.name]["version"]
+        if isinstance(expected_pkg_versions, basestring):
+            expected_pkg_versions = [expected_pkg_versions]
+        for expected_pkg_version in expected_pkg_versions:
+            # does the version match, to the precision requested?
+            # and, is it strictly greater, at the precision requested?
+            match_version = '.'.join(pkg.version.split('.')[:expected_pkg_version.count('.') + 1])
+            if match_version == expected_pkg_version:
+                pkgs_precise_version_found.add(pkg.name)
 
     not_found = []
     for name, pkg in expected_pkgs_dict.items():
@@ -157,8 +160,13 @@ def _check_higher_version_found(pkgs, expected_pkgs_dict):
     for pkg in pkgs:
         if pkg.name not in expected_pkg_names:
             continue
-        expected_pkg_version = expected_pkgs_dict[pkg.name]["version"]
-        req_release_arr = [int(segment) for segment in expected_pkg_version.split(".")]
+        expected_pkg_versions = expected_pkgs_dict[pkg.name]["version"]
+        if isinstance(expected_pkg_versions, basestring):
+            expected_pkg_versions = [expected_pkg_versions]
+        # NOTE: the list of versions is assumed to be sorted so that the highest
+        # desirable version is the last.
+        highest_desirable_version = expected_pkg_versions[-1]
+        req_release_arr = [int(segment) for segment in highest_desirable_version.split(".")]
         version = [int(segment) for segment in pkg.version.split(".")]
         too_high = version[:len(req_release_arr)] > req_release_arr
         higher_than_seen = version > higher_version_for_pkg.get(pkg.name, [])
